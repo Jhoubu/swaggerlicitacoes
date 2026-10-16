@@ -1,0 +1,15 @@
+{
+  "name": "radar-licitacoes-software",
+  "version": "0.1.0",
+  "description": "Radar automático de licitações de software usando a API pública do PNCP",
+  "type": "module",
+  "private": true,
+  "engines": {
+    "node": ">=22.16"
+  },
+  "scripts": {
+    "start": "node src/server.js",
+    "coletar": "node src/cli.js",
+    "test": "node --test"
+  }
+}

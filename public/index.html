@@ -1,0 +1,279 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Radar de Licitações</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='16' cy='16' r='14' fill='none' stroke='%230B6B57' stroke-width='3'/%3E%3Cpath d='M16 16 L16 2 A14 14 0 0 1 29 11 Z' fill='%230B6B57'/%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&display=swap">
+<style>
+  :root {
+    --fundo: #F2F4F3; --superficie: #FFFFFF; --tinta: #1A2220; --suave: #5C6864;
+    --linha: #DCE2DF; --radar: #0B6B57; --radar-claro: #D6EBE4; --ambar: #A35F00; --urgente: #B42318;
+    --trilha: #E4E9E7;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --fundo: #121816; --superficie: #1A2220; --tinta: #E6ECEA; --suave: #9AA7A2;
+      --linha: #2C3633; --radar: #3FBF9B; --radar-claro: #173B32; --ambar: #E3A040; --urgente: #F07167;
+      --trilha: #2A3431;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--fundo); color: var(--tinta); font: 15px/1.5 "Public Sans", system-ui, sans-serif; font-variant-numeric: tabular-nums; }
+  a { color: var(--radar); }
+  button, select, input { font: inherit; color: inherit; }
+  :focus-visible { outline: 2px solid var(--radar); outline-offset: 2px; }
+
+  header { padding: 28px 24px 16px; max-width: 1200px; margin: 0 auto; display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: end; justify-content: space-between; }
+  h1 { margin: 0; font-size: 28px; font-weight: 700; letter-spacing: -0.01em; }
+  .sub { margin: 4px 0 0; color: var(--suave); font-size: 14px; }
+  .acoes { display: flex; gap: 12px; align-items: center; }
+  .btn { background: var(--radar); color: #fff; border: 0; border-radius: 6px; padding: 9px 16px; font-weight: 600; cursor: pointer; }
+  .btn[disabled] { opacity: .6; cursor: progress; }
+  @media (prefers-color-scheme: dark) { .btn { color: #0E1412; } }
+
+  .filtros { max-width: 1200px; margin: 0 auto; padding: 0 24px 16px; display: flex; flex-wrap: wrap; gap: 10px; }
+  .filtros input[type=search] { flex: 1 1 260px; }
+  .filtros input, .filtros select { background: var(--superficie); border: 1px solid var(--linha); border-radius: 6px; padding: 8px 10px; }
+  .filtros label.check { display: flex; gap: 6px; align-items: center; color: var(--suave); font-size: 14px; }
+
+  main { max-width: 1200px; margin: 0 auto; padding: 0 24px 48px; }
+  .resumo { color: var(--suave); font-size: 14px; margin: 0 0 8px; }
+  .lista { background: var(--superficie); border: 1px solid var(--linha); border-radius: 10px; overflow: hidden; }
+  .cab, .op > summary { display: grid; grid-template-columns: 64px minmax(0, 1fr) 130px 120px 150px; gap: 16px; align-items: center; padding: 12px 16px; }
+  .cab { font-size: 13px; color: var(--suave); border-bottom: 1px solid var(--linha); }
+  .cab .num, .op .num { text-align: right; }
+  .op { border-bottom: 1px solid var(--linha); }
+  .op:last-child { border-bottom: 0; }
+  .op > summary { list-style: none; cursor: pointer; }
+  .op > summary::-webkit-details-marker { display: none; }
+  .op > summary:hover { background: color-mix(in srgb, var(--radar-claro) 45%, transparent); }
+  .op[open] > summary { background: var(--radar-claro); }
+
+  /* Mostrador da pontuação: o arco cresce com o score, como a varredura de um radar. */
+  .dial { --p: 0; width: 52px; height: 52px; border-radius: 50%; display: grid; place-items: center;
+    background: conic-gradient(var(--cor) calc(var(--p) * 1%), var(--trilha) 0); }
+  .dial span { width: 40px; height: 40px; border-radius: 50%; background: var(--superficie); display: grid; place-items: center; font-weight: 700; font-size: 16px; }
+  .dial.alta { --cor: var(--radar); } .dial.media { --cor: var(--ambar); } .dial.baixa { --cor: var(--suave); }
+
+  .objeto { margin: 0; font-weight: 500; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .op[open] .objeto { -webkit-line-clamp: unset; }
+  .orgao { margin: 2px 0 0; color: var(--suave); font-size: 13px; }
+  .novo { display: inline-block; font-size: 12px; font-weight: 600; color: var(--radar); border: 1px solid var(--radar); border-radius: 4px; padding: 0 5px; margin-right: 6px; }
+  .prazo strong { display: block; }
+  .prazo small, .valor small, .mod small { color: var(--suave); font-size: 12px; display: block; }
+  .prazo.curto strong { color: var(--urgente); }
+  .prazo.medio strong { color: var(--ambar); }
+  .mod { font-size: 14px; }
+
+  .detalhe { padding: 4px 16px 18px 96px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 24px; font-size: 14px; }
+  .detalhe h3 { font-size: 14px; margin: 8px 0 6px; }
+  .detalhe ul { margin: 0; padding: 0; list-style: none; }
+  .detalhe li { display: flex; gap: 10px; padding: 3px 0; }
+  .pts { min-width: 36px; text-align: right; font-weight: 600; }
+  .pts.pos { color: var(--radar); } .pts.neg { color: var(--urgente); }
+  .obs li { color: var(--suave); display: block; }
+  .links { display: flex; flex-wrap: wrap; gap: 16px; margin-top: 12px; }
+  .chips { color: var(--suave); }
+
+  .vazio { padding: 40px 24px; text-align: center; color: var(--suave); }
+  .coletas { margin-top: 24px; font-size: 13px; color: var(--suave); }
+  .coletas table { border-collapse: collapse; width: 100%; }
+  .coletas td, .coletas th { text-align: left; padding: 4px 8px 4px 0; border-bottom: 1px solid var(--linha); font-weight: 400; }
+
+  @media (max-width: 820px) {
+    header, .filtros, main { padding-left: 16px; padding-right: 16px; }
+    .cab { display: none; }
+    .op > summary { grid-template-columns: 52px minmax(0, 1fr); grid-template-areas: "d o" "d v" "d p" "d m"; gap: 4px 12px; }
+    .op > summary > :nth-child(1) { grid-area: d; align-self: start; }
+    .op > summary > :nth-child(2) { grid-area: o; }
+    .op > summary > :nth-child(3) { grid-area: v; text-align: left; }
+    .op > summary > :nth-child(4) { grid-area: p; }
+    .op > summary > :nth-child(5) { grid-area: m; }
+    .prazo strong, .prazo small, .valor small { display: inline; margin-right: 6px; }
+    .mod small { display: inline; margin-left: 6px; }
+    .detalhe { padding: 4px 16px 16px; grid-template-columns: 1fr; gap: 8px; }
+    .coletas { overflow-x: auto; }
+  }
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>Radar de Licitações</h1>
+    <p class="sub" id="status">Carregando…</p>
+  </div>
+  <div class="acoes">
+    <button class="btn" id="coletar">Coletar agora</button>
+  </div>
+</header>
+
+<div class="filtros" role="search">
+  <input type="search" id="busca" placeholder="Buscar no objeto, órgão ou município" aria-label="Buscar">
+  <select id="minScore" aria-label="Pontuação mínima">
+    <option value="0">Qualquer pontuação</option>
+    <option value="45" selected>Pontuação 45+</option>
+    <option value="60">Pontuação 60+</option>
+    <option value="70">Pontuação 70+</option>
+  </select>
+  <select id="modalidade" aria-label="Modalidade"><option value="">Todas as modalidades</option></select>
+  <select id="uf" aria-label="UF"><option value="">Todas as UFs</option></select>
+  <select id="ordem" aria-label="Ordenar por">
+    <option value="score">Maior pontuação</option>
+    <option value="prazo">Prazo mais próximo</option>
+    <option value="valor">Menor valor</option>
+    <option value="novas">Mais recentes no radar</option>
+  </select>
+  <label class="check"><input type="checkbox" id="encerradas"> Mostrar encerradas</label>
+</div>
+
+<main>
+  <p class="resumo" id="resumo"></p>
+  <div class="lista" id="lista">
+    <div class="cab" aria-hidden="true">
+      <span>Pontos</span><span>Objeto e órgão</span><span class="num">Valor estimado</span><span>Data-limite</span><span>Modalidade</span>
+    </div>
+    <div id="itens"></div>
+  </div>
+  <section class="coletas" id="coletas"></section>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const moeda = new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
+const dataHora = new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+const norm = (s) => String(s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const brasilia = (iso) => new Date(/(Z|[+-]\d\d:\d\d)$/.test(iso) ? iso : iso + '-03:00');
+
+// No PNCP a dispensa eletrônica é a modalidade 8 com modo de disputa "Dispensa Com Disputa".
+const modalidade = (o) => o.modalidade_id !== 8 ? o.modalidade_nome
+  : /disputa/i.test(o.modo_disputa_nome || '') ? 'Dispensa eletrônica' : 'Dispensa sem disputa';
+
+let dados = [];
+const abertas = new Set(); // linhas expandidas sobrevivem à atualização automática
+let ultimaColetaOk = null;
+
+function preencherSelect(sel, valores) {
+  const atual = sel.value;
+  sel.length = 1;
+  for (const v of [...new Set(valores.filter(Boolean))].sort()) sel.add(new Option(v, v));
+  sel.value = atual;
+}
+
+function prazo(op) {
+  if (!op.data_encerramento) return { txt: '—', sub: '', cls: '' };
+  const d = brasilia(op.data_encerramento);
+  const dias = (d - Date.now()) / 864e5;
+  const quando = dataHora.format(d);
+  if (dias < 0) return { txt: 'Encerrada', sub: quando, cls: '' };
+  if (dias < 1) return { txt: 'Hoje', sub: quando, cls: 'curto' };
+  const n = Math.floor(dias);
+  return { txt: n === 1 ? '1 dia' : `${n} dias`, sub: quando, cls: dias < 3 ? 'curto' : dias < 7 ? 'medio' : '' };
+}
+
+function render() {
+  const q = norm($('busca').value);
+  const min = Number($('minScore').value);
+  const mod = $('modalidade').value, uf = $('uf').value, ordem = $('ordem').value;
+  let lista = dados.filter((o) =>
+    o.score >= min && (!mod || modalidade(o) === mod) && (!uf || o.uf === uf) &&
+    (!q || norm(`${o.objeto} ${o.orgao} ${o.unidade} ${o.municipio}`).includes(q)));
+  const prazoCmp = (a, b) => (a.data_encerramento || '9').localeCompare(b.data_encerramento || '9');
+  const cmp = {
+    score: (a, b) => b.score - a.score || prazoCmp(a, b),
+    prazo: prazoCmp,
+    valor: (a, b) => (a.valor_estimado || Infinity) - (b.valor_estimado || Infinity),
+    novas: (a, b) => b.primeira_coleta.localeCompare(a.primeira_coleta),
+  }[ordem];
+  lista.sort(cmp);
+
+  $('resumo').textContent = `${lista.length} de ${dados.length} oportunidades. Pontuação preliminar com base no resumo do PNCP; confirme no edital.`;
+  if (!lista.length) {
+    $('itens').innerHTML = `<div class="vazio">${dados.length
+      ? 'Nenhuma oportunidade com esses filtros. Reduza a pontuação mínima ou limpe a busca.'
+      : 'Nenhuma oportunidade coletada ainda. Clique em “Coletar agora” para fazer a primeira busca no PNCP.'}</div>`;
+    return;
+  }
+  $('itens').innerHTML = lista.map((o) => {
+    const p = prazo(o);
+    const novo = ultimaColetaOk && o.primeira_coleta >= ultimaColetaOk;
+    const motivos = o.motivos.map((m) =>
+      `<li><span class="pts ${m.pts >= 0 ? 'pos' : 'neg'}">${m.pts > 0 ? '+' : ''}${m.pts}</span><span>${esc(m.motivo)}</span></li>`).join('');
+    return `<details class="op" data-id="${esc(o.numero_controle_pncp)}"${abertas.has(o.numero_controle_pncp) ? ' open' : ''}>
+      <summary>
+        <div class="dial ${o.faixa}" style="--p:${o.score}" title="Pontuação ${o.score} de 100"><span>${o.score}</span></div>
+        <div>
+          <p class="objeto">${novo ? '<span class="novo">Nova</span>' : ''}${esc(o.objeto)}</p>
+          <p class="orgao">${esc(o.orgao)}${o.municipio ? `, ${esc(o.municipio)}/${esc(o.uf)}` : ''}</p>
+        </div>
+        <div class="num valor">${o.valor_estimado ? moeda.format(o.valor_estimado) : '<small>Não informado</small>'}</div>
+        <div class="prazo ${p.cls}"><strong>${p.txt}</strong><small>${p.sub}</small></div>
+        <div class="mod">${esc(modalidade(o))}<small>${esc([o.modalidade_id === 8 ? '' : o.modo_disputa_nome, o.srp ? 'registro de preços' : ''].filter(Boolean).join(', '))}</small></div>
+      </summary>
+      <div class="detalhe">
+        <div>
+          <h3>Como a pontuação foi calculada (base 40)</h3>
+          <ul>${motivos}</ul>
+          <p class="chips">Palavras-chave: ${esc(o.palavras_chave.join(', '))}</p>
+        </div>
+        <div>
+          <h3>Antes de decidir</h3>
+          <ul class="obs">${o.observacoes.map((t) => `<li>${esc(t)}</li>`).join('')}</ul>
+          <div class="links">
+            <a href="${esc(o.link_pncp)}" target="_blank" rel="noopener">Abrir no PNCP</a>
+            ${o.link_origem ? `<a href="${esc(o.link_origem)}" target="_blank" rel="noopener">Abrir no sistema de origem</a>` : ''}
+          </div>
+          <p class="chips">Controle PNCP ${esc(o.numero_controle_pncp)}</p>
+        </div>
+      </div>
+    </details>`;
+  }).join('');
+}
+
+async function carregar() {
+  const [ops, st] = await Promise.all([
+    fetch('/api/oportunidades' + ($('encerradas').checked ? '?encerradas=1' : '')).then((r) => r.json()),
+    fetch('/api/status').then((r) => r.json()),
+  ]);
+  dados = ops;
+  preencherSelect($('modalidade'), dados.map(modalidade));
+  preencherSelect($('uf'), dados.map((o) => o.uf));
+
+  const ok = st.coletas.find((c) => c.status === 'ok');
+  ultimaColetaOk = ok?.inicio ?? null;
+  const atual = st.coletas[0];
+  let txt = ok ? `Última coleta concluída em ${dataHora.format(new Date(ok.fim))}` : 'Nenhuma coleta concluída ainda';
+  if (st.coletando && atual) txt = `Coletando agora: ${atual.paginas} páginas lidas, ${atual.relevantes} relevantes encontradas`;
+  else if (atual?.status === 'erro') txt += `. A última tentativa falhou: ${atual.erro}`;
+  $('status').textContent = `${txt}. Coleta automática ${st.agendamento}.`;
+  $('coletar').disabled = st.coletando;
+  $('coletar').textContent = st.coletando ? 'Coletando…' : 'Coletar agora';
+
+  $('coletas').innerHTML = st.coletas.length ? `<table><caption style="text-align:left;padding-bottom:6px">Histórico de coletas</caption>
+    <tr><th>Início</th><th>Situação</th><th>Páginas</th><th>Lidas</th><th>Relevantes</th><th>Novas</th></tr>
+    ${st.coletas.map((c) => `<tr><td>${dataHora.format(new Date(c.inicio))}</td><td>${esc(c.status)}${c.erro ? ': ' + esc(c.erro) : ''}</td>
+      <td>${c.paginas}</td><td>${c.lidos}</td><td>${c.relevantes}</td><td>${c.novos}</td></tr>`).join('')}</table>` : '';
+
+  render();
+  clearTimeout(carregar.t);
+  if (st.coletando) carregar.t = setTimeout(carregar, 5000);
+}
+
+$('coletar').addEventListener('click', async () => {
+  $('coletar').disabled = true;
+  await fetch('/api/coletar', { method: 'POST' });
+  carregar();
+});
+for (const id of ['busca', 'minScore', 'modalidade', 'uf', 'ordem']) $(id).addEventListener('input', render);
+$('encerradas').addEventListener('change', carregar);
+$('itens').addEventListener('toggle', (e) => {
+  const id = e.target.dataset.id;
+  if (e.target.open) abertas.add(id); else abertas.delete(id);
+}, true);
+carregar().catch((e) => { $('status').textContent = `Não foi possível falar com o servidor do radar: ${e.message}`; });
+</script>
+</body>
+</html>
